@@ -10,6 +10,7 @@ A simple program to help myself learn SDL.
 |`d`			| Change draw mode (Draw/Erase)
 |Click			| Draw
 |Scroll			| Zoom in/out
+|Right Drag		| Move
 |`+`			| Zoom in
 |`-`			| Zoom out
 |`CTRL + h`		| Go to 0,0
