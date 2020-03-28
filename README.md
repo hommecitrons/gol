@@ -17,4 +17,5 @@ A simple program to help myself learn SDL.
 |`.`			| Increase frames per tick
 |`,`			| Decrease frames per tick
 |`CTRL + c`		| Clear the board
+|`g`			| Toggle grid
 

@@ -21,6 +21,7 @@ int screen_height = 480;
 
 SDL_Window *g_window = NULL;
 SDL_Renderer *g_renderer = NULL;
+SDL_Texture *g_wintex = NULL;
 
 int key_cooldown = 0;
 const int KEY_COOLDOWN = 3;
@@ -28,8 +29,8 @@ const int KEY_COOLDOWN = 3;
 int mouse_x;
 int mouse_y;
 
-int g_board_width = 100;
-int g_board_height = 100;
+int g_board_width = 200;
+int g_board_height = 200;
 
 typedef char cell;
 
@@ -58,6 +59,9 @@ struct board destroy_board(struct board b)
 
 double view_x = 0;
 double view_y = 0;
+
+int draw_grid = 1;
+
 double zoom = 10;
 const double ZOOM_MAX = 50;
 const double ZOOM_MIN = 2;
@@ -103,6 +107,14 @@ void draw_view(struct board b, double x, double y, double zoom)
 			
 			SDL_RenderFillRect(g_renderer, &cell_rect);
 		}
+	}
+	if (draw_grid)
+	{
+		SDL_SetRenderDrawColor(g_renderer, 0x00, 0x00, 0x00, 0xFF);
+		for (int dx = x - 1; dx <= max_x; dx++)
+			SDL_RenderDrawLine(g_renderer, (dx - x) * zoom, 0, (dx - x) * zoom, screen_height);
+		for (int dy = y - 1; dy <= max_y; dy++)
+			SDL_RenderDrawLine(g_renderer, 0, (dy - y) * zoom, screen_width, (dy - y) * zoom);
 	}
 }
 
@@ -176,6 +188,7 @@ void tick()
 void init(const char *title);
 void end();
 void mainloop();
+void make_wintex();
 
 int main(int argc, char* argv[])
 {
@@ -193,7 +206,8 @@ void print_status()
 	printf("\33[2K\r%d, %d; %d, %d; %dx; tr:%d; c:%d; %s", 
 			(int)view_x, (int)view_y, hover_x, hover_y, (int)zoom, tickrate, 
 			(int)draw_color, ticking ? "ticking" : "paused");
-	fflush(stdout);
+	fflush(stdout); // The buffer flushes on newline, but there's no newline.
+					// We want the text to display now.
 }
 
 void handle_events()
@@ -211,6 +225,9 @@ void handle_events()
 					screen_width = e.window.data1;
 					screen_height = e.window.data2;
 					SDL_SetWindowSize(g_window, screen_width, screen_height);
+
+					SDL_DestroyTexture(g_wintex);
+					make_wintex();
 				}
 				break;
 			case SDL_MOUSEMOTION:
@@ -270,6 +287,10 @@ void handle_events()
 								printf("\nCleared board\n");
 							}
 							break;
+						case SDLK_g:
+							draw_grid = !draw_grid;
+							printf(draw_grid ? "\nGrid enabled\n" : "\nGrid disabled\n");
+							break;
 					}
 					
 					key_cooldown = KEY_COOLDOWN;
@@ -294,11 +315,19 @@ void handle_events()
 void mainloop()
 {
 	g_board = make_board(g_board_width, g_board_height);
+	
 	while (1)
 	{
 		handle_events();
+		
+		// Render to texture for performance
+		SDL_SetRenderTarget(g_renderer, g_wintex);
 		SDL_RenderClear(g_renderer);
 		draw_view(g_board, view_x, view_y, zoom);
+		
+		SDL_SetRenderTarget(g_renderer, NULL);
+		SDL_RenderClear(g_renderer);
+		SDL_RenderCopy(g_renderer, g_wintex, NULL, NULL);
 		SDL_RenderPresent(g_renderer);
 	}
 }
@@ -319,14 +348,24 @@ void init(const char *title)
 	if (g_window == NULL) report_error();
 
 	g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_ACCELERATED | 
-	                                              SDL_RENDERER_PRESENTVSYNC);
+	                                              SDL_RENDERER_PRESENTVSYNC |
+	                                              SDL_RENDERER_TARGETTEXTURE);
 	if (g_renderer == NULL) report_error();
-
+	
+	make_wintex(); 
+	
 	SDL_SetRenderDrawColor(g_renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+}
+
+void make_wintex()
+{
+	g_wintex = SDL_CreateTexture(g_renderer, SDL_PIXELFORMAT_RGBA8888,
+	                              SDL_TEXTUREACCESS_TARGET, screen_width, screen_height);
 }
 
 void end()
 {
+	printf("\n");
 	SDL_DestroyWindow(g_window);
 	SDL_Quit();
 	exit(0);
