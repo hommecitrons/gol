@@ -12,8 +12,8 @@ A simple program to help myself learn SDL.
 |Scroll			| Zoom in/out
 |`+`			| Zoom in
 |`-`			| Zoom out
-|`CTRL + H`		| Go to 0,0
+|`CTRL + h`		| Go to 0,0
 |`.`			| Increase frames per tick
 |`,`			| Decrease frames per tick
-|`CTRL + C`		| Clear the board
+|`CTRL + c`		| Clear the board
 
