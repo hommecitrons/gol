@@ -153,7 +153,10 @@ const int TICKRATE_STEP = 5;
 
 void tick()
 {
-	struct board new_board = make_board(g_board.width, g_board.height);
+	static struct board new_board = {0};
+
+	if (new_board.width == 0) new_board = make_board(g_board.width, g_board.height);
+
 	// Get the new state for each cell on the board
 	for (int y = 0; y < g_board.height; y++)
 	{
@@ -181,8 +184,11 @@ void tick()
 			}
 		}
 	}
-	g_board = destroy_board(g_board);
-	g_board = new_board;
+
+	// Swap the contents of the old board and the new board
+	cell *b_contents = new_board.cells;
+	new_board.cells = g_board.cells;
+	g_board.cells = b_contents;
 }
 
 void init(const char *title);
